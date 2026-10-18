@@ -7,4 +7,7 @@ public class User
     public string Username { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty; // BCrypt hash, never the real password
     public string Role { get; set; } = string.Empty;         // "Admin" or "Customer"
+
+    // Customers only: their own passenger profile. Null until their first booking.
+    public int? PassengerId { get; set; }
 }

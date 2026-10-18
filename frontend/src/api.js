@@ -62,6 +62,11 @@ export const getPrices = () => request("/prices");
 
 // ---- Page 1: look up an existing passenger (for auto-fill) ----
 export const getPassenger = (passengerId) => request(`/passengers/${passengerId}`);
+
+// ---- Customer: their own passenger profile (404 = not assigned yet) ----
+export const getMyProfile = () => request("/passengers/me");
+
+// ---- Page 1: save passenger + one flight ----
 export const savePassengerEntry = (entry) =>
   request("/passengers", { method: "POST", body: JSON.stringify(entry) });
 

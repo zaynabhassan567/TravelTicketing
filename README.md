@@ -10,14 +10,17 @@ A small full-stack learning project.
 
 ## Features
 - Login / register (passwords hashed with BCrypt, JWT tokens, auto log-out on expiry)
-- Roles: **Admin** sees every flight; **Customer** sees only flights they booked
-- Passenger entry form with flight class and a live ticket-price preview
-- Travel history by passenger ID: edit / delete / add rows locally, then **Save all**
-  (the API clears the rows and bulk-inserts the list in one transaction)
+- Separate **Customer** and **Admin** logins
+- **Customer**: books their own flights. The first booking assigns a Passenger ID,
+  which is reused for every later booking. "My flights": edit / delete / add, then **Save all**
+- **Admin**: "All bookings" list plus passenger ID search; can edit and delete flights, not book
+- Flight class with a live ticket-price preview; flight dates must be today or later
+- **Save all** clears the rows and bulk-inserts the list in one transaction
 
 ## Setup
-1. **Database** – existing database: run `database/002_add_login_class_price.sql` once.
-   Fresh database: run `database/TravelDB.sql` (this wipes the tables).
+1. **Database** – existing database: run `database/002_add_login_class_price.sql`, then
+   `database/003_link_customer_passenger.sql`, once each.
+   Fresh database: run `database/TravelDB.sql` (this wipes the tables), then `003`.
 2. **JWT key** – `backend/TravelApi/appsettings.Development.json` must contain
    `{ "Jwt": { "Key": "<random string, at least 32 characters>" } }`.
    This file is in `.gitignore`, so it is never pushed. Create it after cloning.

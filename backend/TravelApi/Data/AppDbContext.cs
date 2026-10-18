@@ -31,6 +31,13 @@ public class AppDbContext : DbContext
         {
             entity.ToTable("Users");
             entity.HasKey(u => u.UserId);
+
+            // A customer account is linked to (at most) one passenger profile.
+            // If that passenger is deleted, the link is cleared (SET NULL).
+            entity.HasOne<Passenger>()
+                  .WithOne()
+                  .HasForeignKey<User>(u => u.PassengerId)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<FlightPrice>(entity =>

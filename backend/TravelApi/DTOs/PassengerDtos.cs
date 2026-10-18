@@ -7,9 +7,6 @@ namespace TravelApi.DTOs;
 /// <summary>What the Passenger Entry form sends (passenger + one flight).</summary>
 public class PassengerEntryDto
 {
-    [Range(1, int.MaxValue, ErrorMessage = "Passenger ID must be a positive number.")]
-    public int PassengerId { get; set; }
-
     [Required, StringLength(100)]
     public string Name { get; set; } = string.Empty;
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { formatPrice } from "../pricing";
+import { todayIso } from "../constants";
 
 // Turns "2026-04-03" into "03 Apr 2026" for display
 function formatDate(isoDate) {
@@ -34,6 +35,13 @@ export default function HistoryRow({ row, passengerId, name, pricing, showBooked
       alert("Fill in date, airline, class and destination before updating the row.");
       return;
     }
+
+    // New rows and changed dates must be today or later (old dates can stay as they are)
+    const dateChanged = row.isNew || draft.flightDate !== row.flightDate;
+    if (dateChanged && draft.flightDate < todayIso()) {
+      alert("Flight date can't be in the past. Pick today or a later date.");
+      return;
+    }
     onUpdate({
       ...draft,
       destination: draft.destination.trim(),
@@ -65,7 +73,7 @@ export default function HistoryRow({ row, passengerId, name, pricing, showBooked
         <td>{name}</td>
         <td>
           <input type="date" value={draft.flightDate} onChange={change("flightDate")}
-            aria-label="Flight date" />
+            min={todayIso()} aria-label="Flight date" />
         </td>
         <td>
           <select value={draft.airline} onChange={change("airline")} aria-label="Airline">

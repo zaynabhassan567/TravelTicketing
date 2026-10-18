@@ -78,6 +78,10 @@ public class TicketsController : ControllerBase
     /// 1) delete the flights this user is allowed to manage for the passenger
     /// 2) insert the full list sent by the frontend
     /// Both inside ONE transaction, so it's all-or-nothing.
+    /// Rules:
+    ///   - customers can only save their OWN passenger profile
+    ///   - admins can edit or delete flights, but not add new ones (customers book)
+    ///   - new or changed dates must be today or later
     /// </summary>
     [HttpPut("history/{passengerId:int}")]
     public async Task<ActionResult<HistoryDto>> SaveAll(int passengerId, List<TicketItemDto> items)
@@ -88,30 +92,50 @@ public class TicketsController : ControllerBase
         if (!await _db.Passengers.AnyAsync(p => p.PassengerId == passengerId))
             return NotFound(new { message = NotFoundMessage(passengerId, isAdmin) });
 
+        if (!isAdmin)
+        {
+            var myPassengerId = await _db.Users
+                .Where(u => u.UserId == userId)
+                .Select(u => u.PassengerId)
+                .FirstOrDefaultAsync();
+            if (myPassengerId != passengerId)
+                return Forbid();   // 403: not your passenger profile
+        }
+
         // The rows this user may replace: admin = all of them, customer = only their own
         var editable = _db.Tickets.Where(t =>
             t.PassengerId == passengerId && (isAdmin || t.BookedByUserId == userId));
 
-        // Remember who booked each existing row, so an admin's save keeps
-        // a customer's flight owned by that customer.
-        var originalOwners = await editable.ToDictionaryAsync(t => t.TicketId, t => t.BookedByUserId);
+        // Remember each existing row's owner and date
+        var originals = await editable
+            .Select(t => new { t.TicketId, t.BookedByUserId, t.FlightDate })
+            .ToDictionaryAsync(t => t.TicketId);
 
-        // Price every row BEFORE deleting anything (if one row is invalid, nothing changes)
+        // Check and price every row BEFORE deleting anything
         var priceList = await _db.FlightPrices.ToListAsync();
         var newTickets = new List<Ticket>();
 
         foreach (var item in items)
         {
+            originals.TryGetValue(item.TicketId ?? 0, out var original);
+
+            if (isAdmin && original == null)
+                return BadRequest(new { message = "Admins can't add new flights. Customers book their own." });
+
+            // New rows and changed dates must be today or later (old dates may stay)
+            var keepsOldDate = original != null && original.FlightDate.Date == item.FlightDate.Date;
+            if (!keepsOldDate && item.FlightDate.Date < DateTime.Today)
+                return BadRequest(new
+                {
+                    message = $"{item.FlightDate:dd MMM yyyy} is in the past. New or changed flight dates must be today or later."
+                });
+
             var match = priceList.FirstOrDefault(p =>
                 string.Equals(p.Airline, item.Airline, StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(p.FlightClass, item.FlightClass, StringComparison.OrdinalIgnoreCase));
 
             if (match is null)
                 return BadRequest(new { message = $"{item.Airline} doesn't offer {item.FlightClass} class." });
-
-            var ownerId = item.TicketId is int oldId && originalOwners.TryGetValue(oldId, out var owner)
-                ? owner     // existing row keeps its original owner
-                : userId;   // new row belongs to whoever is saving
 
             newTickets.Add(new Ticket
             {
@@ -121,7 +145,7 @@ public class TicketsController : ControllerBase
                 FlightClass = match.FlightClass,
                 Price = match.Price,
                 Destination = item.Destination.Trim(),
-                BookedByUserId = ownerId
+                BookedByUserId = original?.BookedByUserId ?? userId   // existing row keeps its owner
             });
         }
 

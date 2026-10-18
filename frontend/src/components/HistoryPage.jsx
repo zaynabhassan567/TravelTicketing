@@ -122,8 +122,9 @@ export default function HistoryPage({ searchRequest, pricing, isAdmin }) {
       <section className="card empty-state">
         <h1>Travel history</h1>
         <p>
-          Search a passenger ID in the top bar to see their flights.
-          {isAdmin ? " Try 5." : " You'll see the flights you booked for them."}
+          {isAdmin
+            ? "Search a passenger ID in the top bar, or click one in All bookings."
+            : "You haven't booked any flights yet. Use Book a flight to make your first booking."}
         </p>
       </section>
     );
@@ -148,7 +149,7 @@ export default function HistoryPage({ searchRequest, pricing, isAdmin }) {
           </div>
 
           {!isAdmin && (
-            <p className="subtitle">Showing the flights you booked for this passenger.</p>
+            <p className="subtitle">Your flights. Edit, delete or add a flight, then click Save all.</p>
           )}
 
           <div className="table-wrap">
@@ -201,7 +202,10 @@ export default function HistoryPage({ searchRequest, pricing, isAdmin }) {
           </div>
 
           <div className="table-footer">
-            <button className="btn btn-ghost" onClick={addRow}>Add flight</button>
+            {/* Only customers add flights; admins edit and delete */}
+            {isAdmin ? <span /> : (
+              <button className="btn btn-ghost" onClick={addRow}>Add flight</button>
+            )}
             <div className="footer-right">
               {dirty && <span className="unsaved">Unsaved changes</span>}
               <button className="btn btn-ghost" disabled={!dirty || saving}

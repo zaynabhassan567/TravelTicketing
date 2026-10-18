@@ -10,9 +10,10 @@ namespace TravelApi.Controllers;
 
 /// <summary>
 /// Passengers. Everything here needs a login token ([Authorize]).
-///   POST   api/passengers        -> Entry form: save passenger + book one flight (any user)
+///   POST   api/passengers        -> "Book a flight" (Customer only; assigns/reuses their Passenger ID)
+///   GET    api/passengers/me     -> the customer's own passenger profile (Customer only)
 ///   GET    api/passengers        -> list all passengers        (Admin only)
-///   GET    api/passengers/{id}   -> one passenger              (Admin only)
+///   GET    api/passengers/{id}   -> one passenger              (Admin: any, Customer: own)
 ///   PUT    api/passengers/{id}   -> update passenger details   (Admin only)
 ///   DELETE api/passengers/{id}   -> delete passenger + tickets (Admin only)
 /// </summary>
@@ -25,58 +26,90 @@ public class PassengersController : ControllerBase
 
     public PassengersController(AppDbContext db) => _db = db;
 
-    // CREATE (used by the Save button on the Entry form)
+    // CREATE - the customer's "Book a flight" form. Only customers book.
+    //   First booking  -> a NEW Passenger ID is assigned and linked to the account
+    //   Later bookings -> the SAME Passenger ID is used again
     [HttpPost]
+    [Authorize(Roles = Roles.Customer)]
     public async Task<IActionResult> SaveEntry(PassengerEntryDto dto)
     {
-        // 1) Work out the price on the server
+        // 1) Flights can only be booked for today or a later date
+        if (dto.FlightDate.Date < DateTime.Today)
+            return BadRequest(new { message = "Flight date can't be in the past. Pick today or a later date." });
+
+        // 2) Work out the price on the server
         var price = await _db.FindPriceAsync(dto.Airline, dto.FlightClass);
         if (price is null)
             return BadRequest(new { message = $"{dto.Airline} doesn't offer {dto.FlightClass} class." });
 
-        // 2) Create or update the passenger
-        var passenger = await _db.Passengers.FindAsync(dto.PassengerId);
-        string message;
+        // 3) Find this customer's passenger profile, or create one with a new ID
+        var userId = User.GetUserId();
+        var user = await _db.Users.FindAsync(userId);
+        if (user is null) return Unauthorized();
 
+        Passenger? passenger = user.PassengerId is int existingId
+            ? await _db.Passengers.FindAsync(existingId)
+            : null;
+
+        string message;
         if (passenger is null)
         {
-            _db.Passengers.Add(new Passenger
-            {
-                PassengerId = dto.PassengerId,
-                Name = dto.Name.Trim(),
-                Contact = dto.Contact.Trim(),
-                Gender = dto.Gender
-            });
-            message = $"Passenger {dto.PassengerId} created and flight booked.";
-        }
-        else if (User.IsAdmin())
-        {
-            passenger.Name = dto.Name.Trim();
-            passenger.Contact = dto.Contact.Trim();
-            passenger.Gender = dto.Gender;
-            message = $"Flight booked and passenger {dto.PassengerId}'s details updated.";
+            // New ID = highest existing Passenger ID + 1
+            var nextId = (await _db.Passengers.MaxAsync(p => (int?)p.PassengerId) ?? 0) + 1;
+            passenger = new Passenger { PassengerId = nextId };
+            _db.Passengers.Add(passenger);
+            user.PassengerId = nextId;   // link it to the account for next time
+            message = $"Flight booked. Your Passenger ID is {nextId}, and it will be used for all your bookings.";
         }
         else
         {
-            // Customers may book for an existing passenger, but can't overwrite
-            // details that someone else saved.
-            message = $"Flight booked for existing passenger {dto.PassengerId}. Their saved details were kept.";
+            message = $"Flight booked for Passenger ID {passenger.PassengerId}.";
         }
 
-        // 3) Add the ticket, owned by whoever is logged in
+        // The customer's own details (they may update them)
+        passenger.Name = dto.Name.Trim();
+        passenger.Contact = dto.Contact.Trim();
+        passenger.Gender = dto.Gender;
+
+        // 4) Add the ticket
         _db.Tickets.Add(new Ticket
         {
-            PassengerId = dto.PassengerId,
+            PassengerId = passenger.PassengerId,
             FlightDate = dto.FlightDate.Date,
             Airline = dto.Airline,
             FlightClass = dto.FlightClass,
             Price = price.Value,
             Destination = dto.Destination.Trim(),
-            BookedByUserId = User.GetUserId()
+            BookedByUserId = userId
         });
 
         await _db.SaveChangesAsync();
-        return Ok(new { message });
+        return Ok(new { message, passengerId = passenger.PassengerId });
+    }
+
+    // GET api/passengers/me -> the logged-in customer's own passenger profile.
+    // 404 = no booking yet, so no Passenger ID has been assigned.
+    [HttpGet("me")]
+    [Authorize(Roles = Roles.Customer)]
+    public async Task<ActionResult<PassengerDto>> GetMyProfile()
+    {
+        var userId = User.GetUserId();
+        var passengerId = await _db.Users
+            .Where(u => u.UserId == userId)
+            .Select(u => u.PassengerId)
+            .FirstOrDefaultAsync();
+
+        var p = passengerId is int id ? await _db.Passengers.FindAsync(id) : null;
+        if (p is null)
+            return NotFound(new { message = "No Passenger ID yet. One is assigned on your first booking." });
+
+        return Ok(new PassengerDto
+        {
+            PassengerId = p.PassengerId,
+            Name = p.Name,
+            Contact = p.Contact,
+            Gender = p.Gender
+        });
     }
 
     // READ (all)

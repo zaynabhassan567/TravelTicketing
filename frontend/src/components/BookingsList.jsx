@@ -61,7 +61,7 @@ export default function BookingsList({ isAdmin, onOpenPassenger }) {
       {error && <p className="alert alert-error">{error}</p>}
 
       {loading ? (
-        <p>Loading bookings…</p>
+        <p>Loading bookingsâ€¦</p>
       ) : bookings.length === 0 ? (
         <p className="empty-row">No bookings yet.</p>
       ) : (
