@@ -1,0 +1,17 @@
+# ---- .NET / Visual Studio ----
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# ---- React / Node ----
+node_modules/
+dist/
+
+# ---- Secrets (if you ever switch to SQL login with a password) ----
+appsettings.Development.json
+
+# ---- OS ----
+.DS_Store
+Thumbs.db

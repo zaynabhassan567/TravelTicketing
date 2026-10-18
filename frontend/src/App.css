@@ -1,0 +1,400 @@
+/* =========================================================
+   Petal Air - soft pink theme
+   Change the colors in :root to re-theme the whole app.
+   ========================================================= */
+:root {
+  --blush: #fff5f7;       /* page background */
+  --petal: #fde6ee;       /* soft fills, table header, hover */
+  --rose-line: #f2cdd9;   /* borders */
+  --rose: #c94f74;        /* primary buttons, active links */
+  --rose-dark: #a93d5f;   /* button hover */
+  --plum: #4b2539;        /* main text */
+  --plum-soft: #8a6276;   /* secondary text */
+  --white: #ffffff;
+  --mint-bg: #e6f5ee;  --mint-text: #2f6f55;   /* success */
+  --berry-bg: #fde3e3; --berry-text: #9b2c3a;  /* error */
+
+  --radius-lg: 18px;
+  --radius-sm: 10px;
+  --font-head: "Quicksand", "Trebuchet MS", sans-serif;
+  --font-body: "Nunito Sans", "Segoe UI", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--blush);
+  color: var(--plum);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+h1 {
+  font-family: var(--font-head);
+  font-size: 1.75rem;
+  margin: 0 0 0.25rem;
+}
+
+button, input, select { font: inherit; color: inherit; }
+
+:focus-visible { outline: 3px solid #f4a6bf; outline-offset: 2px; }
+
+/* ---------- Navbar ---------- */
+.navbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--rose-line);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.navbar-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.brand {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--petal);
+  color: var(--rose);
+}
+.nav-links { display: flex; gap: 0.25rem; }
+.nav-link {
+  border: none;
+  background: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--plum-soft);
+  font-weight: 600;
+}
+.nav-link:hover { background: var(--petal); }
+.nav-link.active { background: var(--petal); color: var(--rose); }
+
+.search {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  position: relative;
+}
+.search input {
+  width: 200px;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--rose-line);
+  border-radius: 999px;
+  background: var(--blush);
+}
+.search button {
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  background: var(--rose);
+  color: var(--white);
+  font-weight: 700;
+  cursor: pointer;
+}
+.search button:hover { background: var(--rose-dark); }
+.search-error {
+  position: absolute;
+  top: 100%;
+  left: 0.9rem;
+  font-size: 0.8rem;
+  color: var(--berry-text);
+}
+
+/* ---------- Layout ---------- */
+.container {
+  max-width: 1040px;
+  margin: 2rem auto;
+  padding: 0 1.25rem;
+}
+.card {
+  background: var(--white);
+  border: 1px solid var(--rose-line);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+}
+.subtitle { color: var(--plum-soft); margin: 0 0 1.5rem; max-width: 60ch; }
+.empty-state p { color: var(--plum-soft); }
+
+/* ---------- Form ---------- */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem 1.25rem;
+}
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.full-width { grid-column: 1 / -1; }
+
+.form-grid input,
+.form-grid select,
+td input,
+td select {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--rose-line);
+  border-radius: var(--radius-sm);
+  background: var(--blush);
+  font-weight: 400;
+}
+.form-grid input:focus,
+.form-grid select:focus { border-color: var(--rose); background: var(--white); }
+
+.form-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.6rem 1.4rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--rose); color: var(--white); }
+.btn-primary:hover:not(:disabled) { background: var(--rose-dark); }
+.btn-ghost { background: var(--white); border-color: var(--rose-line); color: var(--plum); }
+.btn-ghost:hover:not(:disabled) { background: var(--petal); }
+.btn-danger { background: var(--white); border-color: #f0b8c2; color: var(--berry-text); }
+.btn-danger:hover { background: var(--berry-bg); }
+.btn-small { padding: 0.3rem 0.8rem; font-size: 0.85rem; }
+
+/* ---------- Alerts ---------- */
+.alert { margin: 1.25rem 0 0; padding: 0.75rem 1rem; border-radius: var(--radius-sm); }
+.alert-success { background: var(--mint-bg); color: var(--mint-text); }
+.alert-error { background: var(--berry-bg); color: var(--berry-text); }
+
+/* ---------- Boarding-pass header (the one decorative piece) ---------- */
+.pass {
+  display: flex;
+  background: var(--petal);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+.pass-main { flex: 1; padding: 1.1rem 1.5rem; display: flex; flex-direction: column; }
+.pass-stub {
+  position: relative;
+  padding: 1.1rem 1.75rem;
+  border-left: 2px dashed var(--rose-line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/* the two half-circle "punch holes" on the perforation */
+.pass-stub::before,
+.pass-stub::after {
+  content: "";
+  position: absolute;
+  left: -11px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--white);
+}
+.pass-stub::before { top: -10px; }
+.pass-stub::after { bottom: -10px; }
+.pass-label { font-size: 0.8rem; color: var(--plum-soft); }
+.pass-name { font-family: var(--font-head); font-weight: 700; font-size: 1.6rem; }
+.pass-id { font-family: var(--font-head); font-weight: 700; font-size: 1.6rem; color: var(--rose); }
+
+/* ---------- Table ---------- */
+.table-wrap { overflow-x: auto; border: 1px solid var(--rose-line); border-radius: var(--radius-sm); }
+table { width: 100%; border-collapse: collapse; min-width: 640px; }
+th {
+  text-align: left;
+  background: var(--petal);
+  font-size: 0.85rem;
+  padding: 0.7rem 1rem;
+}
+td { padding: 0.65rem 1rem; border-top: 1px solid var(--rose-line); }
+tbody tr:hover { background: var(--blush); }
+.row-editing, .row-editing:hover { background: #fff0f4; }
+td input, td select { padding: 0.35rem 0.5rem; width: 100%; }
+.row-actions { white-space: nowrap; text-align: right; }
+.row-actions .btn + .btn { margin-left: 0.4rem; }
+.empty-row { text-align: center; color: var(--plum-soft); padding: 1.5rem; }
+
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+.footer-right { display: flex; align-items: center; gap: 0.75rem; }
+.unsaved {
+  font-size: 0.85rem;
+  color: var(--rose);
+  font-weight: 700;
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 680px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .search { margin-left: 0; width: 100%; }
+  .search input { flex: 1; width: auto; }
+  .card { padding: 1.25rem; }
+}
+
+/* =========================================================
+   Login / Register
+   ========================================================= */
+.auth-wrap {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  gap: 1.25rem;
+}
+.auth-brand { font-size: 1.5rem; }
+.auth-card { width: 100%; max-width: 400px; }
+.auth-form { display: flex; flex-direction: column; gap: 1rem; }
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.auth-form input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--rose-line);
+  border-radius: var(--radius-sm);
+  background: var(--blush);
+  font-weight: 400;
+}
+.auth-form input:focus { border-color: var(--rose); background: var(--white); }
+.auth-form .btn { margin-top: 0.25rem; }
+.auth-switch { margin: 1.25rem 0 0; text-align: center; color: var(--plum-soft); }
+.link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--rose);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* =========================================================
+   Logged-in user in the navbar
+   ========================================================= */
+.user-area { display: flex; align-items: center; gap: 0.5rem; }
+.user-name { font-weight: 700; }
+.role-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--petal);
+  color: var(--plum-soft);
+}
+.role-badge.admin { background: var(--rose); color: var(--white); }
+
+/* =========================================================
+   Prices
+   ========================================================= */
+.price-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--radius-sm);
+  background: var(--petal);
+}
+.price-preview strong { font-family: var(--font-head); font-size: 1.25rem; color: var(--rose); }
+.price-cell { white-space: nowrap; font-variant-numeric: tabular-nums; }
+tfoot td { border-top: 2px solid var(--rose-line); background: var(--blush); }
+.total-label { text-align: right; font-weight: 700; }
+.total-value { font-weight: 700; color: var(--rose); }
+.form-grid select:disabled, td select:disabled { opacity: 0.6; }
+
+@media (max-width: 680px) {
+  .user-area { width: 100%; justify-content: flex-end; }
+}
+
+/* =========================================================
+   Passenger ID auto-fill
+   ========================================================= */
+.lookup-note {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--plum-soft);
+}
+
+.lookup-found {
+    color: var(--mint-text);
+}
+
+.form-grid input[readonly],
+.form-grid select:disabled {
+    background: var(--petal);
+    color: var(--plum-soft);
+    cursor: not-allowed;
+}
+
+/* =========================================================
+   Customer / Admin login switch
+   ========================================================= */
+.portal-switch {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    margin-bottom: 1.25rem;
+    background: var(--petal);
+    border-radius: 999px;
+}
+
+.portal-tab {
+    flex: 1;
+    border: none;
+    background: none;
+    padding: 0.5rem;
+    border-radius: 999px;
+    font-weight: 700;
+    color: var(--plum-soft);
+    cursor: pointer;
+}
+
+    .portal-tab.active {
+        background: var(--white);
+        color: var(--rose);
+        box-shadow: 0 1px 3px rgba(75, 37, 57, 0.15);
+    }
+
+/* =========================================================
+   Bookings list
+   ========================================================= */
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
