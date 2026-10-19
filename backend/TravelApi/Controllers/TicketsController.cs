@@ -11,11 +11,11 @@ namespace TravelApi.Controllers;
 /// <summary>
 /// Travel history for one passenger.
 ///   GET api/tickets/history/{passengerId} -> passenger name + flights
-///   PUT api/tickets/history/{passengerId} -> "Save all": replace the flights
+///   PUT api/tickets/history/{passengerId} -> "Save all": replace the flights (Admin only)
 ///
-/// Who sees what:
-///   Admin    -> every flight of that passenger
-///   Customer -> only the flights THEY booked for that passenger
+/// Who can do what:
+///   Admin    -> sees every flight, can edit / delete them and Save all
+///   Customer -> only VIEWS their own flights (read-only)
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -74,40 +74,29 @@ public class TicketsController : ControllerBase
     }
 
     /// <summary>
-    /// Bulk sync, same idea as before:
-    /// 1) delete the flights this user is allowed to manage for the passenger
-    /// 2) insert the full list sent by the frontend
-    /// Both inside ONE transaction, so it's all-or-nothing.
+    /// "Save all" (Admin only). The browser has already updated its local list;
+    /// now the database is synced in two steps inside ONE transaction:
+    /// 1) delete ALL flights of this passenger
+    /// 2) bulk insert the full updated list sent by the browser
+    /// If anything fails, nothing changes (all-or-nothing).
     /// Rules:
-    ///   - customers can only save their OWN passenger profile
-    ///   - admins can edit or delete flights, but not add new ones (customers book)
-    ///   - new or changed dates must be today or later
+    ///   - only existing flights can be kept or edited (customers book new ones)
+    ///   - a changed date must be today or later (old flights may keep their date)
     /// </summary>
     [HttpPut("history/{passengerId:int}")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<HistoryDto>> SaveAll(int passengerId, List<TicketItemDto> items)
     {
         var userId = User.GetUserId();
-        var isAdmin = User.IsAdmin();
 
         if (!await _db.Passengers.AnyAsync(p => p.PassengerId == passengerId))
-            return NotFound(new { message = NotFoundMessage(passengerId, isAdmin) });
+            return NotFound(new { message = NotFoundMessage(passengerId, isAdmin: true) });
 
-        if (!isAdmin)
-        {
-            var myPassengerId = await _db.Users
-                .Where(u => u.UserId == userId)
-                .Select(u => u.PassengerId)
-                .FirstOrDefaultAsync();
-            if (myPassengerId != passengerId)
-                return Forbid();   // 403: not your passenger profile
-        }
+        // Every flight of this passenger (these are the rows that get replaced)
+        var passengerTickets = _db.Tickets.Where(t => t.PassengerId == passengerId);
 
-        // The rows this user may replace: admin = all of them, customer = only their own
-        var editable = _db.Tickets.Where(t =>
-            t.PassengerId == passengerId && (isAdmin || t.BookedByUserId == userId));
-
-        // Remember each existing row's owner and date
-        var originals = await editable
+        // Remember each existing row's owner and date before deleting
+        var originals = await passengerTickets
             .Select(t => new { t.TicketId, t.BookedByUserId, t.FlightDate })
             .ToDictionaryAsync(t => t.TicketId);
 
@@ -119,15 +108,15 @@ public class TicketsController : ControllerBase
         {
             originals.TryGetValue(item.TicketId ?? 0, out var original);
 
-            if (isAdmin && original == null)
-                return BadRequest(new { message = "Admins can't add new flights. Customers book their own." });
+            if (original == null)
+                return BadRequest(new { message = "Only existing flights can be saved here. Customers book new flights." });
 
-            // New rows and changed dates must be today or later (old dates may stay)
-            var keepsOldDate = original != null && original.FlightDate.Date == item.FlightDate.Date;
+            // A changed date must be today or later (an old flight may keep its date)
+            var keepsOldDate = original.FlightDate.Date == item.FlightDate.Date;
             if (!keepsOldDate && item.FlightDate.Date < DateTime.Today)
                 return BadRequest(new
                 {
-                    message = $"{item.FlightDate:dd MMM yyyy} is in the past. New or changed flight dates must be today or later."
+                    message = $"{item.FlightDate:dd MMM yyyy} is in the past. Changed flight dates must be today or later."
                 });
 
             var match = priceList.FirstOrDefault(p =>
@@ -145,19 +134,19 @@ public class TicketsController : ControllerBase
                 FlightClass = match.FlightClass,
                 Price = match.Price,
                 Destination = item.Destination.Trim(),
-                BookedByUserId = original?.BookedByUserId ?? userId   // existing row keeps its owner
+                BookedByUserId = original.BookedByUserId   // the customer who booked it keeps it
             });
         }
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
 
-        await editable.ExecuteDeleteAsync();   // Step 1: clear
-        _db.Tickets.AddRange(newTickets);      // Step 2: bulk insert
+        await passengerTickets.ExecuteDeleteAsync();   // Step 1: delete everything
+        _db.Tickets.AddRange(newTickets);              // Step 2: bulk insert the list
         await _db.SaveChangesAsync();
 
         await transaction.CommitAsync();
 
-        return Ok(await LoadHistory(passengerId, userId, isAdmin));
+        return Ok(await LoadHistory(passengerId, userId, isAdmin: true));
     }
 
     // Builds the HistoryDto (or null if the passenger doesn't exist)

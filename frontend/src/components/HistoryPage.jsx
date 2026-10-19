@@ -3,11 +3,6 @@ import { getHistory, saveAllHistory } from "../api";
 import { formatPrice } from "../pricing";
 import HistoryRow from "./HistoryRow";
 
-// Each local row needs a unique React "key". Rows from the DB use their TicketId,
-// rows added in the browser get a temporary key.
-let tempKeyCounter = 0;
-const newTempKey = () => `new-${++tempKeyCounter}`;
-
 // Convert the API's ticket into our local row shape
 const toLocalRow = (t) => ({
   key: `t-${t.ticketId}`,
@@ -72,17 +67,6 @@ export default function HistoryPage({ searchRequest, pricing, isAdmin }) {
     setDirty(true);
   };
 
-  const addRow = () => {
-    setRows((prev) => [
-      ...prev,
-      {
-        key: newTempKey(), ticketId: null, flightDate: "", airline: "", flightClass: "",
-        price: null, destination: "", bookedBy: "", isNew: true,
-      },
-    ]);
-    setDirty(true);
-  };
-
   // ---- Bulk sync: one API call for the whole list ----
   const handleSaveAll = async () => {
     const incomplete = rows.some(
@@ -114,7 +98,7 @@ export default function HistoryPage({ searchRequest, pricing, isAdmin }) {
   };
 
   const total = rows.reduce((sum, r) => sum + (Number(r.price) || 0), 0);
-  const columnCount = isAdmin ? 9 : 8;
+  const columnCount = isAdmin ? 9 : 7; // customers have no "Booked by" or actions column
 
   // ---- Render ----
   if (!searchRequest) {
@@ -148,9 +132,11 @@ export default function HistoryPage({ searchRequest, pricing, isAdmin }) {
             </div>
           </div>
 
-          {!isAdmin && (
-            <p className="subtitle">Your flights. Edit, delete or add a flight, then click Save all.</p>
-          )}
+          <p className="subtitle">
+            {isAdmin
+              ? "Edit or delete flights in the list below. Nothing is saved until you click Save all."
+              : "Your booked flights. This list is view-only."}
+          </p>
 
           <div className="table-wrap">
             <table>
@@ -164,14 +150,14 @@ export default function HistoryPage({ searchRequest, pricing, isAdmin }) {
                   <th>Price</th>
                   <th>Destination</th>
                   {isAdmin && <th>Booked by</th>}
-                  <th aria-label="Actions"></th>
+                  {isAdmin && <th aria-label="Actions"></th>}
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
                     <td colSpan={columnCount} className="empty-row">
-                      No flights in the list. Add one below.
+                      {isAdmin ? "No flights in the list." : "You have no flights yet."}
                     </td>
                   </tr>
                 ) : (
@@ -183,6 +169,7 @@ export default function HistoryPage({ searchRequest, pricing, isAdmin }) {
                       name={passenger.name}
                       pricing={pricing}
                       showBookedBy={isAdmin}
+                      readOnly={!isAdmin}
                       onUpdate={updateRow}
                       onDelete={deleteRow}
                     />
@@ -201,11 +188,10 @@ export default function HistoryPage({ searchRequest, pricing, isAdmin }) {
             </table>
           </div>
 
+          {/* Save buttons: admin only (customers just view) */}
+          {isAdmin && (
           <div className="table-footer">
-            {/* Only customers add flights; admins edit and delete */}
-            {isAdmin ? <span /> : (
-              <button className="btn btn-ghost" onClick={addRow}>Add flight</button>
-            )}
+            <span />
             <div className="footer-right">
               {dirty && <span className="unsaved">Unsaved changes</span>}
               <button className="btn btn-ghost" disabled={!dirty || saving}
@@ -218,6 +204,7 @@ export default function HistoryPage({ searchRequest, pricing, isAdmin }) {
               </button>
             </div>
           </div>
+          )}
         </>
       ) : (
         <h1>Travel history</h1>

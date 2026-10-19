@@ -14,10 +14,11 @@ function formatDate(isoDate) {
 
 /**
  * One row of the history table.
- * Edit/Update/Delete only change the LOCAL list in HistoryPage.
+ * readOnly (customers): just shows the flight, no buttons.
+ * Edit/Update/Delete (admin) only change the LOCAL list in HistoryPage.
  * Nothing touches the database until "Save all" is clicked.
  */
-export default function HistoryRow({ row, passengerId, name, pricing, showBookedBy, onUpdate, onDelete }) {
+export default function HistoryRow({ row, passengerId, name, pricing, showBookedBy, readOnly, onUpdate, onDelete }) {
   // New (blank) rows start in edit mode so the user can fill them in
   const [editing, setEditing] = useState(row.isNew === true);
   const [draft, setDraft] = useState(row);
@@ -116,12 +117,15 @@ export default function HistoryRow({ row, passengerId, name, pricing, showBooked
       <td className="price-cell">{formatPrice(row.price)}</td>
       <td>{row.destination}</td>
       {showBookedBy && <td>{row.bookedBy || "you"}</td>}
+      {/* Edit / Delete buttons: hidden when the list is view-only (customers) */}
+      {!readOnly && (
       <td className="row-actions">
         <button className="btn btn-small btn-ghost" onClick={startEdit}>Edit</button>
         <button className="btn btn-small btn-danger" onClick={() => onDelete(row.key)}>
           Delete
         </button>
       </td>
+      )}
     </tr>
   );
 }

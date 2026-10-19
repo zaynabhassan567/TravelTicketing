@@ -12,8 +12,9 @@ A small full-stack learning project.
 - Login / register (passwords hashed with BCrypt, JWT tokens, auto log-out on expiry)
 - Separate **Customer** and **Admin** logins
 - **Customer**: books their own flights. The first booking assigns a Passenger ID,
-  which is reused for every later booking. "My flights": edit / delete / add, then **Save all**
-- **Admin**: "All bookings" list plus passenger ID search; can edit and delete flights, not book
+  which is reused for every later booking. "My flights" is view-only
+- **Admin**: "All bookings" list plus passenger ID search; edits / deletes flights in the
+  local list, then **Save all** (admins don't book)
 - Flight class with a live ticket-price preview; flight dates must be today or later
 - **Save all** clears the rows and bulk-inserts the list in one transaction
 
